@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CROSSWORD PETUALANGAN SISTEM PERNAPASAN MANUSIA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter & Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#0284c7',
+                            darkblue: '#0369a1',
+                            teal: '#0d9488',
+                            lightteal: '#ccfbf1',
+                            orange: '#f97316',
+                            yellow: '#f59e0b',
+                            bg: '#f0f9ff'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #f0fdf4 100%);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Custom Crossword Cell Styles */
+        .grid-cell {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .grid-cell-number {
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 0.65rem;
+            line-height: 1;
+            font-weight: 700;
+            color: #0369a1;
+            pointer-events: none;
+        }
+
+        .grid-cell input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: transparent;
+            border: none;
+            outline: none;
+            caret-color: transparent;
+            cursor: pointer;
+            padding-top: 4px;
+        }
+
+        @media (min-width: 768px) {
+            .grid-cell input { font-size: 1.3rem; }
+            .grid-cell-number { font-size: 0.75rem; }
+        }
+
+        /* Active word & cell highlighting */
+        .cell-blank { background-color: #1e293b; border-color: #0f172a; }
+        .cell-filled { background-color: #ffffff; border: 2px solid #93c5fd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .cell-highlight-word { background-color: #e0f2fe !important; border-color: #38bdf8 !important; }
+        .cell-highlight-active { background-color: #fef08a !important; border-color: #f59e0b !important; transform: scale(1.05); z-index: 10; box-shadow: 0 4px 10px rgba(245,158,11,0.3); }
+        .cell-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #15803d; }
+        .cell-incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
+
+        .btn-bounce {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+
+        .pulse-subtle {
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(14, 165, 233, 0.8); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+    <!-- HEADER BAR -->
+    <header class="bg-white/90 backdrop-blur-md border-b-4 border-sky-400 sticky top-0 z-40 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Game Title Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showScreen('home-screen')">
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-xl md:text-2xl shadow-lg border-2 border-sky-300">
+                    <i class="fa-solid fa-lungs"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-xl font-bold text-sky-900 leading-tight">PETUALANGAN PERNAPASAN</h1>
+                    <p class="text-xs md:text-sm font-medium text-sky-600">IPAS Kelas VI SD - Kurikulum Merdeka</p>
+                </div>
+            </div>
+
+            <!-- Top Right Action Controls (Fullscreen & Audio) -->
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <!-- BGM Audio Toggle -->
+                <button id="bgm-toggle-btn" onclick="toggleBGM()" class="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-amber-100 text-amber-700 hover:bg-amber-200 border-2 border-amber-300 flex items-center justify-center text-lg shadow-sm transition btn-bounce" title="Musik Latar (BGM)">
+                    <i id="bgm-icon" class="fa-solid fa-music"></i>
+                </button>
+                
+                <!-- SFX Sound Toggle -->
+                <button id="sfx-toggle-btn" onclick="toggleSFX()" class="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-teal-100 text-teal-700 hover:bg-teal-200 border-2 border-teal-300 flex items-center justify-center text-lg shadow-sm transition btn-bounce" title="Efek Suara (SFX)">
+                    <i id="sfx-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Fullscreen Toggle -->
+                <button id="fullscreen-btn" onclick="toggleFullScreen()" class="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-sky-100 text-sky-700 hover:bg-sky-200 border-2 border-sky-300 flex items-center justify-center text-lg shadow-sm transition btn-bounce" title="Layar Penuh">
+                    <i id="fullscreen-icon" class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-3 md:p-6 flex items-center justify-center">
+
+        <!-- 1. HOME SCREEN -->
+        <section id="home-screen" class="w-full max-w-4xl bg-white/95 rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-sky-200 text-center flex flex-col items-center">
+            
+            <!-- Cartoon Respiratory Illustration -->
+            <div class="relative mb-6">
+                <div class="w-32 h-32 md:w-44 md:h-44 bg-sky-100 rounded-full flex items-center justify-center shadow-inner border-4 border-sky-300 mx-auto">
+                    <svg class="w-24 h-24 md:w-32 md:h-32 text-sky-500 animate-bounce" viewBox="0 0 64 64" fill="currentColor">
+                        <path d="M32 4c-1.1 0-2 .9-2 2v10.2C28.2 15 26 13.2 23 12c-4.5-1.8-9.5-.8-13 2.5S4.8 23 6.5 27.5c2 5.5 6.5 16.5 15.5 22.5 3.5 2.3 7.5 3.5 11.5 3.5s8-1.2 11.5-3.5c9-6 13.5-17 15.5-22.5 1.7-4.5.8-9.7-2.5-13S44 10.2 39.5 12c-3 1.2-5.2 3-7 4.2V6c0-1.1-.9-2-2-2zm-6 14c3.5 0 6.5 2.2 7.8 5.5.4 1-.1 2.1-1.1 2.5s-2.1-.1-2.5-1.1C29.3 22.7 27.8 21 26 21c-1.1 0-2-.9-2-2s.9-2 2-2zm12 0c1.1 0 2 .9 2 2s-.9 2-2 2c-1.8 0-3.3 1.7-4.2 3.9-.4 1-1.5 1.5-2.5 1.1s-1.5-1.5-1.1-2.5C33.5 20.2 36.5 18 38 18z"/>
+                    </svg>
+                </div>
+                <span class="absolute -bottom-2 -right-2 bg-amber-400 text-amber-950 font-bold text-xs md:text-sm px-3 py-1 rounded-full border-2 border-white shadow">
+                    <i class="fa-solid fa-star mr-1"></i> Fase C
+                </span>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <h1 class="text-2xl md:text-4xl font-extrabold text-sky-900 mb-2 leading-tight">
+                CROSSWORD PETUALANGAN<br>SISTEM PERNAPASAN MANUSIA
+            </h1>
+            <p class="text-sky-700 font-medium text-base md:text-lg mb-6 max-w-2xl">
+                "Kenali Organ Pernapasan, Pecahkan Teka-Teki, Jadilah Ahli Sains!"
+            </p>
+
+            <!-- Metadata Info Pills -->
+            <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                <span class="bg-sky-100 text-sky-800 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold border border-sky-200">
+                    <i class="fa-solid fa-book-open mr-1"></i> IPAS Kelas VI SD
+                </span>
+                <span class="bg-teal-100 text-teal-800 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold border border-teal-200">
+                    <i class="fa-solid fa-puzzle-piece mr-1"></i> 15 Soal Teka-Teki
+                </span>
+                <span class="bg-orange-100 text-orange-800 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold border border-orange-200">
+                    <i class="fa-solid fa-trophy mr-1"></i> Skor Maksimal: 150
+                </span>
+            </div>
+
+            <!-- Main Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 md:gap-4 w-full max-w-md">
+                <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-lg md:text-xl py-4 px-6 rounded-2xl shadow-lg border-b-4 border-amber-700 btn-bounce pulse-subtle">
+                    <i class="fa-solid fa-play mr-2"></i> MULAI BERMAIN
+                </button>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3 mt-4 w-full max-w-md">
+                <button onclick="openModal('instructions-modal')" class="flex-1 bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold py-2.5 px-4 rounded-xl text-sm border border-sky-300 transition btn-bounce">
+                    <i class="fa-solid fa-circle-info mr-1"></i> PETUNJUK BERMAIN
+                </button>
+                <button onclick="openModal('objectives-modal')" class="flex-1 bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold py-2.5 px-4 rounded-xl text-sm border border-teal-300 transition btn-bounce">
+                    <i class="fa-solid fa-bullseye mr-1"></i> TUJUAN PEMBELAJARAN
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. GAME PLAY SCREEN -->
+        <section id="game-screen" class="hidden w-full max-w-7xl">
+            <!-- Top Dashboard Bar -->
+            <div class="bg-white/95 rounded-2xl p-4 mb-4 shadow-md border-2 border-sky-200 flex flex-wrap items-center justify-between gap-3">
+                <!-- Status Indicators -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
+                        <i class="fa-solid fa-clock text-sky-600"></i>
+                        <span id="timer-display" class="font-bold text-sky-900 font-mono text-base">00:00</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                        <span class="text-xs md:text-sm font-bold text-amber-900">Bantuan: <span id="hints-left-count" class="text-amber-600">2</span>/2</span>
+                    </div>
+                </div>
+
+                <!-- Active Question Quick Banner -->
+                <div id="active-clue-banner" class="flex-1 mx-2 bg-sky-50 border-l-4 border-sky-500 p-2.5 rounded-r-xl text-xs md:text-sm font-semibold text-sky-900 truncate">
+                    Pilih nomor soal pada papan atau daftar petunjuk untuk memulai.
+                </div>
+
+                <!-- Action Toolbar -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="giveHint()" id="btn-hint" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs md:text-sm shadow border-b-2 border-amber-700 btn-bounce">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> BANTUAN HURUF
+                    </button>
+                    <button onclick="clearCurrentWord()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs md:text-sm shadow border-b-2 border-slate-400 btn-bounce">
+                        <i class="fa-solid fa-eraser mr-1"></i> KOSONGKAN
+                    </button>
+                    <button onclick="checkCurrentWord()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs md:text-sm shadow border-b-2 border-teal-800 btn-bounce">
+                        <i class="fa-solid fa-check mr-1"></i> PERIKSA JAWABAN
+                    </button>
+                    <button onclick="checkAllWords()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs md:text-sm shadow border-b-2 border-sky-800 btn-bounce">
+                        <i class="fa-solid fa-list-check mr-1"></i> PERIKSA SEMUA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Crossword Grid + Clues Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Crossword Board Area (Left Side) -->
+                <div class="lg:col-span-6 xl:col-span-6 bg-white/95 rounded-3xl p-4 md:p-6 shadow-xl border-4 border-sky-200 flex flex-col items-center">
+                    <div id="crossword-grid" class="grid gap-1 w-full max-w-[580px] p-2 bg-slate-900 rounded-2xl shadow-inner border-2 border-slate-700 overflow-auto">
+                        <!-- Crossword cells rendered via JS -->
+                    </div>
+                    <div class="mt-4 flex items-center justify-between w-full text-xs text-slate-500 font-medium px-2">
+                        <span><i class="fa-solid fa-keyboard mr-1"></i> Gunakan tombol panah & backspace pada keyboard</span>
+                        <span class="hidden sm:inline"><i class="fa-solid fa-mouse-pointer mr-1"></i> Klik kotak untuk berpindah</span>
+                    </div>
+                </div>
+
+                <!-- Clues Panel Area (Right Side / Di Samping Papan Crossword) -->
+                <div class="lg:col-span-6 xl:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Across Clues List (Mendatar) -->
+                    <div class="bg-white/95 rounded-2xl p-4 shadow-md border-2 border-sky-200 flex flex-col h-[520px]">
+                        <h2 class="text-base font-bold text-sky-900 border-b-2 border-sky-200 pb-2 mb-3 flex items-center justify-between flex-shrink-0">
+                            <span><i class="fa-solid fa-arrow-right text-sky-500 mr-2"></i>MENDATAR</span>
+                            <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold">8 Soal</span>
+                        </h2>
+                        <div id="clues-across" class="overflow-y-auto space-y-2 pr-1 flex-grow">
+                            <!-- Across clues rendered via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Down Clues List (Menurun) -->
+                    <div class="bg-white/95 rounded-2xl p-4 shadow-md border-2 border-teal-200 flex flex-col h-[520px]">
+                        <h2 class="text-base font-bold text-teal-900 border-b-2 border-teal-200 pb-2 mb-3 flex items-center justify-between flex-shrink-0">
+                            <span><i class="fa-solid fa-arrow-down text-teal-500 mr-2"></i>MENURUN</span>
+                            <span class="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-bold">7 Soal</span>
+                        </h2>
+                        <div id="clues-down" class="overflow-y-auto space-y-2 pr-1 flex-grow">
+                            <!-- Down clues rendered via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. RESULT SCREEN -->
+        <section id="result-screen" class="hidden w-full max-w-3xl bg-white/95 rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-sky-300 text-center flex flex-col items-center">
+            
+            <div id="result-badge-icon" class="w-24 h-24 rounded-full bg-amber-100 border-4 border-amber-300 flex items-center justify-center text-4xl text-amber-500 mb-4 shadow-lg">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 id="result-title" class="text-2xl md:text-3xl font-extrabold text-sky-900 mb-1">
+                Luar Biasa!
+            </h2>
+            <p id="result-message" class="text-sky-700 font-medium text-base md:text-lg mb-6 max-w-lg">
+                "Kamu telah menyelesaikan Petualangan Sistem Pernapasan Manusia!"
+            </p>
+
+            <!-- Score Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full mb-6">
+                <div class="bg-sky-50 rounded-2xl p-3 border-2 border-sky-200">
+                    <span class="text-xs text-sky-600 font-bold block uppercase">Skor Akhir</span>
+                    <span id="res-score" class="text-2xl font-black text-sky-900">150</span>
+                    <span class="text-xs text-slate-400 block">/ 150</span>
+                </div>
+                <div class="bg-teal-50 rounded-2xl p-3 border-2 border-teal-200">
+                    <span class="text-xs text-teal-600 font-bold block uppercase">Persentase</span>
+                    <span id="res-percent" class="text-2xl font-black text-teal-700">100%</span>
+                    <span class="text-xs text-slate-400 block">Nilai Akurat</span>
+                </div>
+                <div class="bg-emerald-50 rounded-2xl p-3 border-2 border-emerald-200">
+                    <span class="text-xs text-emerald-600 font-bold block uppercase">Jawaban Benar</span>
+                    <span id="res-correct" class="text-2xl font-black text-emerald-700">15</span>
+                    <span class="text-xs text-slate-400 block">Soal</span>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-3 border-2 border-slate-200">
+                    <span class="text-xs text-slate-600 font-bold block uppercase">Waktu Waktu</span>
+                    <span id="res-time" class="text-xl font-black text-slate-700 font-mono">03:45</span>
+                    <span class="text-xs text-slate-400 block">Menit : Detik</span>
+                </div>
+            </div>
+
+            <!-- Result Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                <button onclick="startGame()" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl shadow border-b-4 border-sky-800 transition btn-bounce">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> MAIN LAGI
+                </button>
+                <button onclick="openModal('discussion-modal')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow border-b-4 border-amber-700 transition btn-bounce">
+                    <i class="fa-solid fa-book-bookmark mr-2"></i> LIHAT PEMBAHASAN
+                </button>
+                <button onclick="showScreen('home-screen')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl shadow border-b-4 border-slate-400 transition btn-bounce">
+                    <i class="fa-solid fa-house mr-2"></i> BERANDA
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALS CONTAINER -->
+    
+    <!-- 1. INSTRUCTIONS MODAL -->
+    <div id="instructions-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-4 border-sky-300 relative max-h-[90vh] flex flex-col">
+            <button onclick="closeModal('instructions-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-sky-900 mb-4 flex items-center">
+                <i class="fa-solid fa-circle-info text-sky-500 mr-2"></i> Petunjuk Bermain
+            </h3>
+            <div class="space-y-3 text-sm text-slate-600 overflow-y-auto pr-2 flex-grow">
+                <div class="flex items-start gap-3 bg-sky-50 p-3 rounded-xl">
+                    <span class="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
+                    <p>Pilih nomor pada papan teka-teki silang atau klik salah satu kalimat petunjuk di sebelah kanan.</p>
+                </div>
+                <div class="flex items-start gap-3 bg-sky-50 p-3 rounded-xl">
+                    <span class="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+                    <p>Ketikkan huruf jawaban pada kotak. Gunakan keyboard komputer/laptop atau keyboard layar tablet/ponsel.</p>
+                </div>
+                <div class="flex items-start gap-3 bg-sky-50 p-3 rounded-xl">
+                    <span class="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+                    <p>Setiap kotak persilangan dipakai bersama oleh kata mendatar dan menurun.</p>
+                </div>
+                <div class="flex items-start gap-3 bg-sky-50 p-3 rounded-xl">
+                    <span class="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
+                    <p>Gunakan tombol <strong>PERIKSA JAWABAN</strong> untuk mengecek kata pilihanmu, atau <strong>BANTUAN HURUF</strong> jika mengalami kesulitan (Maksimal 2 kali).</p>
+                </div>
+            </div>
+            <button onclick="closeModal('instructions-modal')" class="mt-5 w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl shadow btn-bounce">
+                SAYA MENGERTI
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. OBJECTIVES MODAL -->
+    <div id="objectives-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-4 border-teal-300 relative max-h-[90vh] flex flex-col">
+            <button onclick="closeModal('objectives-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-teal-900 mb-4 flex items-center">
+                <i class="fa-solid fa-bullseye text-teal-500 mr-2"></i> Tujuan Pembelajaran
+            </h3>
+            <div class="space-y-2.5 text-sm text-slate-600 overflow-y-auto pr-2 flex-grow">
+                <div class="flex items-start gap-2 bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <i class="fa-solid fa-check text-teal-600 mt-0.5"></i>
+                    <p>Mengidentifikasi organ-organ utama dalam sistem pernapasan manusia.</p>
+                </div>
+                <div class="flex items-start gap-2 bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <i class="fa-solid fa-check text-teal-600 mt-0.5"></i>
+                    <p>Menjelaskan fungsi organ pernapasan seperti hidung, trakea, paru-paru, dan alveolus.</p>
+                </div>
+                <div class="flex items-start gap-2 bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <i class="fa-solid fa-check text-teal-600 mt-0.5"></i>
+                    <p>Mengenali jalur aliran udara saat proses inspirasi dan ekspirasi.</p>
+                </div>
+                <div class="flex items-start gap-2 bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <i class="fa-solid fa-check text-teal-600 mt-0.5"></i>
+                    <p>Menjelaskan peran gas Oksigen ($O_2$) dan Karbon Dioksida ($CO_2$) dalam tubuh.</p>
+                </div>
+                <div class="flex items-start gap-2 bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <i class="fa-solid fa-check text-teal-600 mt-0.5"></i>
+                    <p>Memahami kebiasaan baik seperti berolahraga untuk menjaga kesehatan paru-paru.</p>
+                </div>
+            </div>
+            <button onclick="closeModal('objectives-modal')" class="mt-5 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl shadow btn-bounce">
+                TUTUP
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. DISCUSSION / PEMBAHASAN MODAL -->
+    <div id="discussion-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border-4 border-amber-300 relative max-h-[90vh] flex flex-col">
+            <button onclick="closeModal('discussion-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-amber-900 mb-2 flex items-center">
+                <i class="fa-solid fa-book-open text-amber-500 mr-2"></i> Pembahasan Soal Sistem Pernapasan
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Pelajari kunci jawaban beserta penjelasan ilmiah berikut:</p>
+            
+            <div id="discussion-content-list" class="space-y-3 overflow-y-auto pr-2 flex-grow text-xs md:text-sm">
+                <!-- Content populated dynamically -->
+            </div>
+
+            <button onclick="closeModal('discussion-modal')" class="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl shadow btn-bounce">
+                KEMBALI KE HASIL
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST FEEDBACK NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 hidden transition-all duration-300 flex items-center space-x-3 text-sm font-semibold border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-sky-400 text-lg"></i>
+        <span id="toast-msg">Pesan umpan balik</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white/80 border-t border-sky-100 py-3 text-center text-xs text-sky-800 font-medium">
+        CROSSWORD PETUALANGAN SISTEM PERNAPASAN MANUSIA &bull; Media Pembelajaran IPAS SD
+    </footer>
+
+    <script>
+        /**
+         * BANK SOAL CROSSWORD DATASET
+         * 15 validated anatomical terms with precise matrix coordinates.
+         * Grid Size: 18 Rows x 18 Cols (1-indexed for ease)
+         */
+        const CROSSWORD_DATA = [
+            // A. MENDATAR (ACROSS)
+            { id: 1, number: 1, direction: 'across', row: 1, col: 1, answer: 'HIDUNG', clue: 'Organ tempat masuknya udara pertama kali ke dalam sistem pernapasan manusia.', explanation: 'Hidung adalah organ terdepan sistem pernapasan yang menjadi jalur utama masuknya udara.' },
+            { id: 2, number: 2, direction: 'across', row: 1, col: 8, answer: 'TRAKEA', clue: 'Saluran yang menghubungkan laring dengan bronkus.', explanation: 'Trakea (batang tenggorokan) menyalurkan udara bersih menuju bronkus.' },
+            { id: 3, number: 3, direction: 'across', row: 15, col: 1, answer: 'PARUPARU', clue: 'Organ utama tempat pertukaran gas oksigen dan karbon dioksida berlangsung.', explanation: 'Paru-paru menampung udara dan memungkinkan pertukaran gas vital di dalam alveolus.' },
+            { id: 4, number: 4, direction: 'across', row: 3, col: 1, answer: 'BRONKUS', clue: 'Cabang trakea yang menuju paru-paru kanan dan kiri.', explanation: 'Bronkus membagi saluran udara trakea menjadi dua cabang ke paru-paru kanan dan kiri.' },
+            { id: 5, number: 5, direction: 'across', row: 18, col: 2, answer: 'OKSIGEN', clue: 'Gas yang dibutuhkan tubuh untuk proses respirasi sel.', explanation: 'Oksigen ($O_2$) diserap tubuh saat bernapas untuk pembentukan energi seluler.' },
+            { id: 6, number: 6, direction: 'across', row: 7, col: 1, answer: 'KARBONDIOKSIDA', clue: 'Gas sisa yang dikeluarkan tubuh saat mengembuskan napas.', explanation: 'Karbon dioksida ($CO_2$) merupakan racun sisa metabolisme yang harus diembuskan keluar.' },
+            { id: 7, number: 7, direction: 'across', row: 12, col: 5, answer: 'DIAFRAGMA', clue: 'Otot utama yang membantu perubahan volume rongga dada saat bernapas.', explanation: 'Diafragma mendatar saat inspirasi dan melengkung saat ekspirasi.' },
+            { id: 8, number: 8, direction: 'across', row: 14, col: 10, answer: 'INSPIRASI', clue: 'Proses memasukkan udara ke dalam paru-paru.', explanation: 'Inspirasi terjadi saat rongga dada membesar dan udara luar terhisap masuk.' },
+
+            // B. MENURUN (DOWN)
+            { id: 9, number: 9, direction: 'down', row: 7, col: 4, answer: 'BRONKIOLUS', clue: 'Cabang kecil bronkus yang menyalurkan udara menuju alveolus.', explanation: 'Bronkiolus adalah percabangan halus dari bronkus yang terhubung ke kantong alveolus.' },
+            { id: 10, number: 10, direction: 'down', row: 3, col: 9, answer: 'ALVEOLUS', clue: 'Kantong udara kecil di paru-paru yang menjadi tempat pertukaran gas.', explanation: 'Alveolus dikelilingi pembuluh darah kapiler tempat difusi $O_2$ dan $CO_2$.' },
+            { id: 11, number: 11, direction: 'down', row: 5, col: 7, answer: 'HIDUNG', clue: 'Organ yang membantu menyaring, menghangatkan, dan melembapkan udara yang masuk.', explanation: 'Rambut dan selaput lendir hidung berfungsi menyaring debu dan mengatur suhu udara.' },
+            { id: 12, number: 12, direction: 'down', row: 6, col: 10, answer: 'EKSPIRASI', clue: 'Proses mengeluarkan udara dari paru-paru.', explanation: 'Ekspirasi terjadi saat diafragma relaksasi dan mengembuskan udara sisa keluar.' },
+            { id: 13, number: 13, direction: 'down', row: 4, col: 8, answer: 'FARING', clue: 'Saluran pernapasan yang terletak di belakang rongga hidung dan mulut.', explanation: 'Faring merupakan persimpangan antara saluran pernapasan dan pencernaan.' },
+            { id: 14, number: 14, direction: 'down', row: 5, col: 3, answer: 'LARING', clue: 'Organ yang berperan dalam pembentukan suara dan menjadi jalur udara menuju trakea.', explanation: 'Laring memuat pita suara yang bergetar saat dilewati udara.' },
+            { id: 15, number: 15, direction: 'down', row: 5, col: 2, answer: 'OLAHRAGA', clue: 'Kebiasaan yang baik untuk menjaga kesehatan sistem pernapasan, misalnya berjalan kaki, bersepeda, atau berlari secara teratur.', explanation: 'Olahraga teratur meningkatkan kapasitas vital paru-paru dan melancarkan sirkulasi darah.' }
+        ];
+
+        const GRID_SIZE = 18; // 18x18 Grid Matrix
+        let gridMatrix = []; // Stores cell data
+        let activeWordId = null;
+        let activeCellCoords = { r: null, c: null };
+        let remainingHints = 2;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let isGameFinished = false;
+
+        // Audio System State
+        let isBGMOn = false;
+        let isSFXOn = true;
+        let audioCtx = null;
+        let bgmOscillator = null;
+        let bgmGainNode = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Cheerful BGM Melody Generator
+        function playBGM() {
+            if (!isBGMOn) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            stopBGM(); // Stop previous instance if any
+
+            try {
+                bgmGainNode = audioCtx.createGain();
+                bgmGainNode.gain.setValueAtTime(0.08, audioCtx.currentTime); // Soft background volume (8%)
+                bgmGainNode.connect(audioCtx.destination);
+
+                const notes = [261.63, 329.63, 392.00, 523.25, 440.00, 349.23, 392.00, 293.66]; // C4, E4, G4, C5, A4, F4, G4, D4
+                let noteIdx = 0;
+
+                function scheduleMelody() {
+                    if (!isBGMOn || !bgmGainNode) return;
+                    const osc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(notes[noteIdx], audioCtx.currentTime);
+                    
+                    noteGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    noteGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                    
+                    osc.connect(noteGain);
+                    noteGain.connect(bgmGainNode);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+
+                    noteIdx = (noteIdx + 1) % notes.length;
+                }
+
+                bgmOscillator = setInterval(scheduleMelody, 400);
+            } catch (e) {
+                console.log("Audio BGM notice:", e);
+            }
+        }
+
+        function stopBGM() {
+            if (bgmOscillator) {
+                clearInterval(bgmOscillator);
+                bgmOscillator = null;
+            }
+            if (bgmGainNode) {
+                bgmGainNode.disconnect();
+                bgmGainNode = null;
+            }
+        }
+
+        function toggleBGM() {
+            isBGMOn = !isBGMOn;
+            const btn = document.getElementById('bgm-toggle-btn');
+            const icon = document.getElementById('bgm-icon');
+
+            if (isBGMOn) {
+                btn.classList.replace('bg-amber-100', 'bg-amber-500');
+                btn.classList.replace('text-amber-700', 'text-white');
+                icon.className = 'fa-solid fa-music animate-pulse';
+                playBGM();
+                showToast("Musik BGM Diaktifkan", "success");
+            } else {
+                btn.classList.replace('bg-amber-500', 'bg-amber-100');
+                btn.classList.replace('text-white', 'text-amber-700');
+                icon.className = 'fa-solid fa-music-slash';
+                stopBGM();
+                showToast("Musik BGM Dimatikan", "info");
+            }
+        }
+
+        function toggleSFX() {
+            isSFXOn = !isSFXOn;
+            const btn = document.getElementById('sfx-toggle-btn');
+            const icon = document.getElementById('sfx-icon');
+
+            if (isSFXOn) {
+                btn.classList.replace('bg-slate-200', 'bg-teal-100');
+                btn.classList.replace('text-slate-500', 'text-teal-700');
+                icon.className = 'fa-solid fa-volume-high';
+                playSFX('correct');
+                showToast("Efek Suara Diaktifkan", "success");
+            } else {
+                btn.classList.replace('bg-teal-100', 'bg-slate-200');
+                btn.classList.replace('text-teal-700', 'text-slate-500');
+                icon.className = 'fa-solid fa-volume-xmark';
+                showToast("Efek Suara Dimatikan", "info");
+            }
+        }
+
+        // Custom Sound Effects
+        function playSFX(type) {
+            if (!isSFXOn) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    // Soft high chime
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    // Gentle low warning
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.2);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'victory') {
+                    // Fanfare chord
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const chordOsc = audioCtx.createOscillator();
+                        const chordGain = audioCtx.createGain();
+                        chordOsc.type = 'sine';
+                        chordOsc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                        chordGain.gain.setValueAtTime(0.1, now + (idx * 0.08));
+                        chordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                        chordOsc.connect(chordGain);
+                        chordGain.connect(audioCtx.destination);
+                        chordOsc.start(now + (idx * 0.08));
+                        chordOsc.stop(now + 0.8);
+                    });
+                }
+            } catch (e) {
+                console.log("SFX error:", e);
+            }
+        }
+
+        function toggleFullScreen() {
+            const icon = document.getElementById('fullscreen-icon');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) {
+                    docEl.requestFullscreen().catch(err => {
+                        showToast("Layar penuh tidak didukung di perangkat/browser ini.", "warning");
+                    });
+                } else if (docEl.webkitRequestFullscreen) {
+                    docEl.webkitRequestFullscreen();
+                } else {
+                    showToast("Fitur Layar Penuh tidak didukung browser ini.", "warning");
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreen-icon');
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                icon.className = "fa-solid fa-compress";
+            } else {
+                icon.className = "fa-solid fa-expand";
+            }
+        }
+
+        function showScreen(screenId) {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+
+            if (screenId === 'home-screen') {
+                clearInterval(timerInterval);
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showToast(message, type = "info") {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = message;
+            if (type === "success") {
+                iconEl.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else if (type === "warning") {
+                iconEl.className = "fa-solid fa-triangle-exclamation text-amber-400 text-lg";
+            } else {
+                iconEl.className = "fa-solid fa-circle-info text-sky-400 text-lg";
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function initGridMatrix() {
+            gridMatrix = Array(GRID_SIZE + 1).fill(null).map(() => 
+                Array(GRID_SIZE + 1).fill(null).map(() => ({
+                    letter: '',
+                    userVal: '',
+                    number: null,
+                    wordIds: [],
+                    isFilled: false
+                }))
+            );
+
+            CROSSWORD_DATA.forEach(word => {
+                const len = word.answer.length;
+                let r = word.row;
+                let c = word.col;
+
+                for (let i = 0; i < len; i++) {
+                    const char = word.answer[i];
+                    const cell = gridMatrix[r][c];
+
+                    cell.isFilled = true;
+                    cell.letter = char;
+                    if (!cell.wordIds.includes(word.id)) {
+                        cell.wordIds.push(word.id);
+                    }
+
+                    if (i === 0) {
+                        cell.number = word.number;
+                    }
+
+                    if (word.direction === 'across') c++;
+                    else r++;
+                }
+            });
+        }
+
+        function renderCrosswordGrid() {
+            const gridContainer = document.getElementById('crossword-grid');
+            gridContainer.style.gridTemplateColumns = `repeat(${GRID_SIZE}, minmax(0, 1fr))`;
+            gridContainer.innerHTML = '';
+
+            for (let r = 1; r <= GRID_SIZE; r++) {
+                for (let c = 1; c <= GRID_SIZE; c++) {
+                    const cellData = gridMatrix[r][c];
+                    const cellEl = document.createElement('div');
+
+                    if (!cellData.isFilled) {
+                        cellEl.className = 'grid-cell cell-blank';
+                    } else {
+                        cellEl.className = 'grid-cell cell-filled';
+                        cellEl.dataset.row = r;
+                        cellEl.dataset.col = c;
+                        cellEl.id = `cell-${r}-${c}`;
+
+                        if (cellData.number) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'grid-cell-number';
+                            numSpan.textContent = cellData.number;
+                            cellEl.appendChild(numSpan);
+                        }
+
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.value = cellData.userVal;
+                        input.autocomplete = 'off';
+
+                        // Input Events
+                        input.addEventListener('focus', () => handleCellFocus(r, c));
+                        input.addEventListener('input', (e) => handleCellInput(r, c, e));
+                        input.addEventListener('keydown', (e) => handleCellKeydown(r, c, e));
+
+                        cellEl.appendChild(input);
+                    }
+
+                    gridContainer.appendChild(cellEl);
+                }
+            }
+        }
+
+        function renderCluesList() {
+            const acrossContainer = document.getElementById('clues-across');
+            const downContainer = document.getElementById('clues-down');
+
+            acrossContainer.innerHTML = '';
+            downContainer.innerHTML = '';
+
+            CROSSWORD_DATA.forEach(word => {
+                const item = document.createElement('div');
+                item.id = `clue-item-${word.id}`;
+                item.className = `p-2.5 rounded-xl text-xs md:text-sm font-medium cursor-pointer border transition flex items-start space-x-2 border-slate-200 hover:bg-sky-50`;
+                item.onclick = () => selectWord(word.id);
+
+                item.innerHTML = `
+                    <span class="font-bold w-6 h-6 rounded-lg bg-sky-500 text-white flex items-center justify-center flex-shrink-0 text-xs">${word.number}</span>
+                    <span class="flex-grow text-slate-700">${word.clue}</span>
+                    <i id="clue-check-${word.id}" class="fa-solid fa-circle-check text-emerald-500 hidden text-base"></i>
+                `;
+
+                if (word.direction === 'across') {
+                    acrossContainer.appendChild(item);
+                } else {
+                    downContainer.appendChild(item);
+                }
+            });
+        }
+
+        function selectWord(wordId) {
+            activeWordId = wordId;
+            const word = CROSSWORD_DATA.find(w => w.id === wordId);
+            if (!word) return;
+
+            // Highlight word in grid & clue list
+            updateGridHighlights();
+            updateClueListHighlights();
+
+            // Focus on first unfilled cell of the word, or start cell
+            let r = word.row;
+            let c = word.col;
+            let targetCell = { r, c };
+
+            for (let i = 0; i < word.answer.length; i++) {
+                if (!gridMatrix[r][c].userVal) {
+                    targetCell = { r, c };
+                    break;
+                }
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+
+            focusCell(targetCell.r, targetCell.c);
+
+            // Update banner text
+            document.getElementById('active-clue-banner').innerHTML = `
+                <span class="font-bold text-sky-600 mr-1">[${word.number} ${word.direction.toUpperCase()}]:</span>
+                ${word.clue}
+            `;
+        }
+
+        function handleCellFocus(r, c) {
+            activeCellCoords = { r, c };
+            const cell = gridMatrix[r][c];
+
+            if (cell.wordIds.length > 0) {
+                if (!activeWordId || !cell.wordIds.includes(activeWordId)) {
+                    activeWordId = cell.wordIds[0];
+                }
+            }
+
+            updateGridHighlights();
+            updateClueListHighlights();
+
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+            if (word) {
+                document.getElementById('active-clue-banner').innerHTML = `
+                    <span class="font-bold text-sky-600 mr-1">[${word.number} ${word.direction.toUpperCase()}]:</span>
+                    ${word.clue}
+                `;
+            }
+        }
+
+        function focusCell(r, c) {
+            const cellEl = document.getElementById(`cell-${r}-${c}`);
+            if (cellEl) {
+                const input = cellEl.querySelector('input');
+                if (input) input.focus();
+            }
+        }
+
+        function updateGridHighlights() {
+            // Clear all highlights
+            document.querySelectorAll('.grid-cell').forEach(el => {
+                el.classList.remove('cell-highlight-word', 'cell-highlight-active');
+            });
+
+            if (!activeWordId) return;
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+            if (!word) return;
+
+            let r = word.row;
+            let c = word.col;
+
+            for (let i = 0; i < word.answer.length; i++) {
+                const cellEl = document.getElementById(`cell-${r}-${c}`);
+                if (cellEl) {
+                    if (r === activeCellCoords.r && c === activeCellCoords.c) {
+                        cellEl.classList.add('cell-highlight-active');
+                    } else {
+                        cellEl.classList.add('cell-highlight-word');
+                    }
+                }
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+        }
+
+        function updateClueListHighlights() {
+            CROSSWORD_DATA.forEach(word => {
+                const el = document.getElementById(`clue-item-${word.id}`);
+                if (el) {
+                    if (word.id === activeWordId) {
+                        el.className = `p-2.5 rounded-xl text-xs md:text-sm font-bold cursor-pointer border transition flex items-start space-x-2 bg-sky-100 border-sky-400 text-sky-900 shadow-sm`;
+                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        el.className = `p-2.5 rounded-xl text-xs md:text-sm font-medium cursor-pointer border transition flex items-start space-x-2 border-slate-200 hover:bg-sky-50 text-slate-700`;
+                    }
+                }
+            });
+        }
+
+        function handleCellInput(r, c, e) {
+            const val = e.target.value.toUpperCase();
+            e.target.value = val;
+            gridMatrix[r][c].userVal = val;
+
+            if (val && activeWordId) {
+                const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+                if (word) {
+                    let nr = r + (word.direction === 'down' ? 1 : 0);
+                    let nc = c + (word.direction === 'across' ? 1 : 0);
+
+                    // Auto advance to next cell
+                    if (nr <= GRID_SIZE && nc <= GRID_SIZE && gridMatrix[nr][nc].isFilled) {
+                        focusCell(nr, nc);
+                    }
+                }
+            }
+            checkWordCompletionStatus();
+        }
+
+        function handleCellKeydown(r, c, e) {
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+
+            if (e.key === 'Backspace') {
+                if (!gridMatrix[r][c].userVal && word) {
+                    let pr = r - (word.direction === 'down' ? 1 : 0);
+                    let pc = c - (word.direction === 'across' ? 1 : 0);
+                    if (pr >= 1 && pc >= 1 && gridMatrix[pr][pc].isFilled) {
+                        focusCell(pr, pc);
+                    }
+                } else {
+                    gridMatrix[r][c].userVal = '';
+                }
+            } else if (e.key === 'ArrowRight') {
+                if (c + 1 <= GRID_SIZE && gridMatrix[r][c + 1].isFilled) focusCell(r, c + 1);
+            } else if (e.key === 'ArrowLeft') {
+                if (c - 1 >= 1 && gridMatrix[r][c - 1].isFilled) focusCell(r, c - 1);
+            } else if (e.key === 'ArrowDown') {
+                if (r + 1 <= GRID_SIZE && gridMatrix[r + 1][c].isFilled) focusCell(r + 1, c);
+            } else if (e.key === 'ArrowUp') {
+                if (r - 1 >= 1 && gridMatrix[r - 1][c].isFilled) focusCell(r - 1, c);
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                // Cycle to next word
+                const currIdx = CROSSWORD_DATA.findIndex(w => w.id === activeWordId);
+                const nextIdx = (currIdx + 1) % CROSSWORD_DATA.length;
+                selectWord(CROSSWORD_DATA[nextIdx].id);
+            }
+        }
+
+        function checkCurrentWord() {
+            if (!activeWordId) return;
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+            if (!word) return;
+
+            let r = word.row;
+            let c = word.col;
+            let userAns = '';
+
+            for (let i = 0; i < word.answer.length; i++) {
+                userAns += gridMatrix[r][c].userVal || ' ';
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+
+            if (userAns === word.answer) {
+                playSFX('correct');
+                markWordCells(word, true);
+                showToast(`Hebat! Jawaban Soal Nomor ${word.number} BENAR!`, "success");
+            } else {
+                playSFX('wrong');
+                markWordCells(word, false);
+                showToast(`Coba periksa kembali petunjuk Soal Nomor ${word.number}.`, "warning");
+            }
+        }
+
+        function checkAllWords() {
+            let correctCount = 0;
+            let totalFilled = 0;
+
+            CROSSWORD_DATA.forEach(word => {
+                let r = word.row;
+                let c = word.col;
+                let userAns = '';
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    userAns += gridMatrix[r][c].userVal || ' ';
+                    if (word.direction === 'across') c++;
+                    else r++;
+                }
+
+                if (userAns.trim().length > 0) totalFilled++;
+
+                if (userAns === word.answer) {
+                    correctCount++;
+                    markWordCells(word, true);
+                    document.getElementById(`clue-check-${word.id}`)?.classList.remove('hidden');
+                }
+            });
+
+            if (correctCount === CROSSWORD_DATA.length) {
+                playSFX('victory');
+                setTimeout(() => finishGame(), 500);
+            } else {
+                playSFX('correct');
+                showToast(`Pemeriksaan selesai: ${correctCount} dari 15 soal benar!`, "info");
+            }
+        }
+
+        function markWordCells(word, isCorrect) {
+            let r = word.row;
+            let c = word.col;
+
+            for (let i = 0; i < word.answer.length; i++) {
+                const cellEl = document.getElementById(`cell-${r}-${c}`);
+                if (cellEl) {
+                    cellEl.classList.remove('cell-correct', 'cell-incorrect');
+                    cellEl.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                }
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+        }
+
+        function clearCurrentWord() {
+            if (!activeWordId) return;
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+            if (!word) return;
+
+            let r = word.row;
+            let c = word.col;
+
+            for (let i = 0; i < word.answer.length; i++) {
+                gridMatrix[r][c].userVal = '';
+                const cellEl = document.getElementById(`cell-${r}-${c}`);
+                if (cellEl) {
+                    const input = cellEl.querySelector('input');
+                    if (input) input.value = '';
+                    cellEl.classList.remove('cell-correct', 'cell-incorrect');
+                }
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+
+            selectWord(activeWordId);
+            showToast(`Jawaban untuk Soal Nomor ${word.number} dikosongkan.`, "info");
+        }
+
+        function giveHint() {
+            if (remainingHints <= 0) {
+                showToast("Kesempatan Bantuan Huruf sudah habis!", "warning");
+                return;
+            }
+
+            if (!activeWordId) {
+                showToast("Pilih salah satu nomor soal terlebih dahulu!", "info");
+                return;
+            }
+
+            const word = CROSSWORD_DATA.find(w => w.id === activeWordId);
+            if (!word) return;
+
+            let r = word.row;
+            let c = word.col;
+            let unfilled = [];
+
+            for (let i = 0; i < word.answer.length; i++) {
+                if (gridMatrix[r][c].userVal !== word.answer[i]) {
+                    unfilled.push({ r, c, char: word.answer[i] });
+                }
+                if (word.direction === 'across') c++;
+                else r++;
+            }
+
+            if (unfilled.length === 0) {
+                showToast("Semua huruf pada kata ini sudah diisi dengan benar!", "info");
+                return;
+            }
+
+            // Reveal 1 letter
+            const hint = unfilled[0];
+            gridMatrix[hint.r][hint.c].userVal = hint.char;
+
+            const cellEl = document.getElementById(`cell-${hint.r}-${hint.c}`);
+            if (cellEl) {
+                const input = cellEl.querySelector('input');
+                if (input) input.value = hint.char;
+            }
+
+            remainingHints--;
+            document.getElementById('hints-left-count').textContent = remainingHints;
+
+            if (remainingHints === 0) {
+                const btn = document.getElementById('btn-hint');
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            playSFX('correct');
+            showToast(`Satu huruf bantuan telah ditampilkan!`, "success");
+            checkWordCompletionStatus();
+        }
+
+        function checkWordCompletionStatus() {
+            let totalUnfilled = 0;
+            CROSSWORD_DATA.forEach(word => {
+                let r = word.row;
+                let c = word.col;
+                let isWordComplete = true;
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    if (gridMatrix[r][c].userVal !== word.answer[i]) {
+                        isWordComplete = false;
+                        totalUnfilled++;
+                    }
+                    if (word.direction === 'across') c++;
+                    else r++;
+                }
+
+                const checkIcon = document.getElementById(`clue-check-${word.id}`);
+                if (checkIcon) {
+                    if (isWordComplete) checkIcon.classList.remove('hidden');
+                    else checkIcon.classList.add('hidden');
+                }
+            });
+
+            if (totalUnfilled === 0 && !isGameFinished) {
+                finishGame();
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            const s = String(secondsElapsed % 60).padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${m}:${s}`;
+        }
+
+        function startGame() {
+            isGameFinished = false;
+            remainingHints = 2;
+            document.getElementById('hints-left-count').textContent = remainingHints;
+            
+            const hintBtn = document.getElementById('btn-hint');
+            hintBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            initGridMatrix();
+            renderCrosswordGrid();
+            renderCluesList();
+
+            showScreen('game-screen');
+            startTimer();
+
+            // Auto select first word
+            selectWord(1);
+
+            if (isBGMOn) {
+                playBGM();
+            }
+        }
+
+        function finishGame() {
+            isGameFinished = true;
+            clearInterval(timerInterval);
+
+            // Calculate precise score
+            let correctCount = 0;
+            CROSSWORD_DATA.forEach(word => {
+                let r = word.row;
+                let c = word.col;
+                let userAns = '';
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    userAns += gridMatrix[r][c].userVal || '';
+                    if (word.direction === 'across') c++;
+                    else r++;
+                }
+
+                if (userAns === word.answer) {
+                    correctCount++;
+                }
+            });
+
+            const totalQuestions = 15;
+            const scorePerWord = 10;
+            const finalScore = correctCount * scorePerWord;
+            const percentage = Math.round((correctCount / totalQuestions) * 100);
+
+            // Category evaluation
+            let categoryTitle = "";
+            let categoryMsg = "";
+            let badgeIcon = "";
+
+            if (percentage >= 90) {
+                categoryTitle = "Luar Biasa! Kamu Ahli Sistem Pernapasan!";
+                categoryMsg = "Selamat! Kamu telah menguasai seluruh konsep organ dan fungsi pernapasan manusia dengan sempurna!";
+                badgeIcon = '<i class="fa-solid fa-trophy text-amber-500"></i>';
+            } else if (percentage >= 75) {
+                categoryTitle = "Hebat! Pemahamanmu Sudah Baik!";
+                categoryMsg = "Kerja bagus! Pemahamanmu mengenai sistem pernapasan manusia sudah sangat matang!";
+                badgeIcon = '<i class="fa-solid fa-medal text-sky-500"></i>';
+            } else if (percentage >= 60) {
+                categoryTitle = "Bagus! Terus Berlatih!";
+                categoryMsg = "Hasil yang baik! Pelajari kembali organ-organ pernapasan yang masih keliru untuk menjadi lebih hebat!";
+                badgeIcon = '<i class="fa-solid fa-star text-teal-500"></i>';
+            } else {
+                categoryTitle = "Jangan Menyerah! Ayo Belajar Lagi!";
+                categoryMsg = "Semangat! Buka modul pembahasan untuk memahami organ pernapasan dan coba lagi ya!";
+                badgeIcon = '<i class="fa-solid fa-heart text-orange-500"></i>';
+            }
+
+            // Update Result UI
+            document.getElementById('res-score').textContent = finalScore;
+            document.getElementById('res-percent').textContent = `${percentage}%`;
+            document.getElementById('res-correct').textContent = correctCount;
+            
+            const m = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            const s = String(secondsElapsed % 60).padStart(2, '0');
+            document.getElementById('res-time').textContent = `${m}:${s}`;
+
+            document.getElementById('result-title').textContent = categoryTitle;
+            document.getElementById('result-message').textContent = `"${categoryMsg}"`;
+            document.getElementById('result-badge-icon').innerHTML = badgeIcon;
+
+            // Render Discussion List
+            renderDiscussionList();
+
+            playSFX('victory');
+            showScreen('result-screen');
+        }
+
+        function renderDiscussionList() {
+            const container = document.getElementById('discussion-content-list');
+            container.innerHTML = '';
+
+            CROSSWORD_DATA.forEach(word => {
+                const card = document.createElement('div');
+                card.className = 'bg-amber-50 rounded-2xl p-3 border border-amber-200';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between font-bold text-sky-900 mb-1">
+                        <span>${word.number}. ${word.answer} (${word.direction.toUpperCase()})</span>
+                        <span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">Kunci Jawaban</span>
+                    </div>
+                    <p class="text-slate-600 mb-1"><strong>Petunjuk:</strong> ${word.clue}</p>
+                    <p class="text-teal-800 bg-white p-2 rounded-xl border border-amber-100"><strong>Penjelasan:</strong> ${word.explanation}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize Application
+        window.onload = function() {
+            showScreen('home-screen');
+        };
+    </script>
+</body>
+</html>
